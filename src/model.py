@@ -14,8 +14,8 @@ class Word2Vec:
         emb_ctx_pos  = self.weights_ctx[idx_ctx]
         emb_ctx_neg  = self.weights_ctx[idx_ctx_neg]
 
-        score_pos = np.dot(emb_cntr, emb_ctx_pos)      # scalar
-        score_neg = emb_ctx_neg.dot(emb_cntr)           # (k,)
+        score_pos = np.dot(emb_cntr, emb_ctx_pos)
+        score_neg = np.dot(emb_cntr, emb_ctx_neg)
 
         loss = -np.log(sigmoid(score_pos) + 1e-7) \
             -np.sum(np.log(sigmoid(-score_neg) + 1e-7))
