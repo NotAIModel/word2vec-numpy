@@ -14,8 +14,8 @@ class Word2Vec:
         emb_ctx_pos  = self.weights_ctx[idx_ctx]
         emb_ctx_neg  = self.weights_ctx[idx_ctx_neg]
 
-        score_pos = np.dot(emb_cntr, emb_ctx_pos)
-        score_neg = np.dot(emb_cntr, emb_ctx_neg)
+        score_pos = np.sum(emb_cntr * emb_ctx_pos, axis=1)          # (B,)
+        score_neg = np.matmul(emb_ctx_neg, emb_cntr[:, :, None]).squeeze(-1)  # (B,k)
 
         loss = -np.log(sigmoid(score_pos) + 1e-7) \
             -np.sum(np.log(sigmoid(-score_neg) + 1e-7))
@@ -24,15 +24,16 @@ class Word2Vec:
 
     def backward(self, idx_cntr, idx_ctx, idx_ctx_neg,
                 emb_cntr, emb_ctx_pos, emb_ctx_neg, score_pos, score_neg):
+        d_pos = (sigmoid(score_pos) - 1)[:, None]
+        d_neg = (sigmoid(score_neg))[:, :, None]
 
-        grad_emb_cntr    = (sigmoid(score_pos) - 1) * emb_ctx_pos \
-                        + np.sum(sigmoid(score_neg)[:, None] * emb_ctx_neg, axis=0)
-        grad_emb_ctx_pos = (sigmoid(score_pos) - 1) * emb_cntr
-        grad_emb_ctx_neg = sigmoid(score_neg)[:, None] * emb_cntr
+        grad_emb_cntr    = d_pos * emb_ctx_pos + np.sum(d_neg * emb_ctx_neg, axis=1)
+        grad_emb_ctx_pos = d_pos * emb_cntr
+        grad_emb_ctx_neg = d_neg * emb_cntr[:, None, :]
 
-        self.weights_cntr[idx_cntr]      -= self.lr * grad_emb_cntr
-        self.weights_ctx[idx_ctx]        -= self.lr * grad_emb_ctx_pos
-        self.weights_ctx[idx_ctx_neg]    -= self.lr * grad_emb_ctx_neg
+        np.add.at(self.weights_cntr, idx_cntr,    - self.lr * grad_emb_cntr)
+        np.add.at(self.weights_ctx,  idx_ctx,     - self.lr * grad_emb_ctx_pos)
+        np.add.at(self.weights_ctx,  idx_ctx_neg, - self.lr * grad_emb_ctx_neg)
     
     def train_step(self, idx_cntr, idx_ctx, idx_ctx_neg):
         loss, emb_cntr, emb_ctx_pos, emb_ctx_neg, score_pos, score_neg = self.forward(
