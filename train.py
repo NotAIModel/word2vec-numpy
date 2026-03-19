@@ -47,13 +47,17 @@ def main():
             idx_ctx     = []
             idx_ctx_neg = []
 
-            for p in batch:
-                idx_cntr.append(p[0]) 
-                idx_ctx.append(p[1]) 
-                idx_ctx_neg.append(sample_negatives(noise_dist, k=NEG_SAMPLES, exclude={p[0], p[1]})) 
+            idx_cntr = [p[0] for p in batch]
+            idx_ctx  = [p[1] for p in batch]
+
+            # sample all negatives at once — B*k*3 samples in one numpy call
+            candidates = np.random.choice(len(noise_dist), 
+                                        size=len(batch) * NEG_SAMPLES * 3,
+                                        p=noise_dist)
+            idx_ctx_neg = candidates.reshape(-1, NEG_SAMPLES * 3)[:, :NEG_SAMPLES].tolist()
 
             loss = model.train_step(idx_cntr, idx_ctx, idx_ctx_neg)
-            total_loss += np.sum(loss)
+            total_loss += loss
             n_batches += 1
 
             if n_batches % 100 == 0 and n_batches > 0:

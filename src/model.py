@@ -17,8 +17,8 @@ class Word2Vec:
         score_pos = np.sum(emb_cntr * emb_ctx_pos, axis=1)          # (B,)
         score_neg = np.matmul(emb_ctx_neg, emb_cntr[:, :, None]).squeeze(-1)  # (B,k)
 
-        loss = -np.log(sigmoid(score_pos) + 1e-7) \
-            -np.sum(np.log(sigmoid(-score_neg) + 1e-7))
+        loss = -np.mean(np.log(sigmoid(score_pos) + 1e-7)) \
+               -np.mean(np.sum(np.log(sigmoid(-score_neg) + 1e-7), axis=1))
 
         return loss, emb_cntr, emb_ctx_pos, emb_ctx_neg, score_pos, score_neg
 
