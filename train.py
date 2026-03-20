@@ -24,24 +24,21 @@ def main():
 
     np.random.seed(SEED)    
     print("tokenizing...")
-    tokens = tokenize(raw_text) # ["jet", "intern", "success"]
-    print(f"toatl tokens: {len(tokens):,}") # 3
+    tokens = tokenize(raw_text) 
+    print(f"toatl tokens: {len(tokens):,}") 
 
     print("building vocab...")
-    word2idx, idx2word, word_counts = build_vocab(tokens, min_count=MIN_COUNT) #word2idx = {"jet": 0, "intern": 1, "success": 2}
-    vocab_size = len(word2idx) # 3
+    word2idx, idx2word, word_counts = build_vocab(tokens, min_count=MIN_COUNT) 
+    vocab_size = len(word2idx) 
     print(f"vocab size: {vocab_size:,}")
 
-    indices = [word2idx[t] for t in tokens if t in word2idx] # indices = [0, 1, 2]  
+    indices = [word2idx[t] for t in tokens if t in word2idx] 
     
     print("intializing model...")
     model = Word2Vec(vocab_size=vocab_size, embed_dim=EMBED_DIM, lr=LR)
-    noise_dist = get_noise_distribution(word_counts, word2idx) # dist * 0.75
-    pairs = get_training_pairs(indices, window_size=WINDOW_SIZE) # (jet, intern), (jet success), (intern, jet), 
-                                                                 # (intern, success), (success, jet), (success, intern)
-                                                                 # but actually in numbers like
-                                                                 # (0, 1), (0, 2), (1, 0)
-                                                                 # (1, 2), (2, 0), (2, 1)
+    noise_dist = get_noise_distribution(word_counts, word2idx) 
+    pairs = get_training_pairs(indices, window_size=WINDOW_SIZE) 
+
     loss_history = []
     for epoch in range (EPOCHS):
         total_loss = 0.0
@@ -49,11 +46,11 @@ def main():
         np.random.shuffle(pairs)
 
         for i in tqdm(range(0, len(pairs), BATCH_SIZE), desc=f"epoch {epoch+1}"):
-            batch = pairs[i:i+BATCH_SIZE] # batch_size = 2 |=> i=0 |=> batch =  (0, 1), (0, 2), (1, 0)
+            batch = pairs[i:i+BATCH_SIZE] 
 
-            idx_cntr = np.array([p[0] for p in batch])# 1, 2, 0
-            idx_ctx  = np.array([p[1] for p in batch])# 0, 0, 1           
-            idx_ctx_neg = sample_negatives_batch(noise_dist, batch, k=NEG_SAMPLES) # some numbers
+            idx_cntr = np.array([p[0] for p in batch])
+            idx_ctx  = np.array([p[1] for p in batch])         
+            idx_ctx_neg = sample_negatives_batch(noise_dist, batch, k=NEG_SAMPLES)
 
             loss = model.train_step(idx_cntr, idx_ctx, idx_ctx_neg) 
             total_loss += loss
@@ -61,7 +58,7 @@ def main():
 
             if n_batches == 1 or (n_batches % 1000 == 0 and n_batches > 0):
                 tqdm.write(f"  batch {n_batches} | avg loss: {total_loss/n_batches:.4f}")
-                loss_history.append(round(total_loss/n_batches, 4))
+                loss_history.append(round(loss, 4))
 
         print(f"epoch {epoch+1} done | avg loss: {total_loss/n_batches:.4f}")
     
