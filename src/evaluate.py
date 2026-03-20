@@ -11,7 +11,7 @@ def load_embeddings(emb_path, vocab_path):
 def cosine_similarity(word1, word2, embeddings, word2idx):
     v1 = embeddings[word2idx[word1]]
     v2 = embeddings[word2idx[word2]]
-    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-8)
+    return float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-8))
     
 def most_similar(word, embeddings, word2idx, idx2word, top_n=5):
     if word not in word2idx:
@@ -22,4 +22,4 @@ def most_similar(word, embeddings, word2idx, idx2word, top_n=5):
     sims = embeddings.dot(vec) / (np.linalg.norm(embeddings, axis=1) * np.linalg.norm(vec) + 1e-8)
     sims[word2idx[word]] = -1
     top_indices = np.argsort(sims)[::-1][:top_n]
-    return [(idx2word[i], round(sims[i], 4)) for i in top_indices]
+    return [(idx2word[i], round(float(sims[i]), 4)) for i in top_indices]
