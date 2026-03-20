@@ -5,9 +5,12 @@ def sigmoid(x):
 
 class Word2Vec:
     def __init__(self, vocab_size, embed_dim=100, lr=0.025):
-        self.weights_cntr = np.random.uniform(-0.5/embed_dim, 0.5/embed_dim, (vocab_size, embed_dim))
-        self.weights_ctx = np.zeros((vocab_size, embed_dim))
         self.lr = lr
+        self.weights_cntr = np.random.uniform(-0.5/embed_dim, 0.5/embed_dim, (vocab_size, embed_dim))
+        self.weights_ctx = np.zeros((vocab_size, embed_dim)) 
+        # zero init for weights_ctx — on step 1, weights_cntr also gets zero gradient
+        # (since grad_cntr depends on weights_ctx values). both matrices start learning
+        # from step 2 onward once weights_ctx gets its first update.
 
     def forward(self, idx_cntr, idx_ctx, idx_ctx_neg):
         emb_cntr     = self.weights_cntr[idx_cntr]
@@ -24,8 +27,8 @@ class Word2Vec:
 
     def backward(self, idx_cntr, idx_ctx, idx_ctx_neg,
                 emb_cntr, emb_ctx_pos, emb_ctx_neg, score_pos, score_neg):
-        d_pos = (sigmoid(score_pos) - 1)[:, None]
-        d_neg = (sigmoid(score_neg))[:, :, None]
+        d_pos = ((sigmoid(score_pos) - 1))[:, None]     # intentionally not dividing by B, to avoid  
+        d_neg = ((sigmoid(score_neg)))[:, :, None]      # setting big LR, see README for the details
 
         grad_emb_cntr    = d_pos * emb_ctx_pos + np.sum(d_neg * emb_ctx_neg, axis=1)
         grad_emb_ctx_pos = d_pos * emb_cntr
@@ -40,5 +43,6 @@ class Word2Vec:
             idx_cntr, idx_ctx, idx_ctx_neg)
         self.backward(
             idx_cntr, idx_ctx, idx_ctx_neg,
-            emb_cntr, emb_ctx_pos, emb_ctx_neg, score_pos, score_neg)
+            emb_cntr, emb_ctx_pos, emb_ctx_neg, 
+            score_pos, score_neg)
         return loss
