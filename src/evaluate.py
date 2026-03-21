@@ -16,7 +16,7 @@ def cosine_similarity(word1, word2, embeddings, word2idx):
 def most_similar(word, embeddings, word2idx, idx2word, top_n=5):
     if word not in word2idx:
         print(f"'{word}' not in vocab")
-        return[]
+        return []
     
     vec = embeddings[word2idx[word]]
     sims = embeddings.dot(vec) / (np.linalg.norm(embeddings, axis=1) * np.linalg.norm(vec) + 1e-8)

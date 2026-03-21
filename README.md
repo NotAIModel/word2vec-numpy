@@ -29,30 +29,24 @@ cosine_similarity("king", "queen")  → 0.783
 
 ## Usage
 ```bash
+git clone https://github.com/NotAIModel/word2vec-numpy
+cd word2vec-numpy
 pip install -r requirements.txt
+pytest
+```
+
+Train from scratch:
+
+```bash
 python train.py
 ```
 
-Pre-trained embeddings are included in `artifacts/` (I've uploaded them as they weigh tiny) 
+Pretrained artifacts are also included in `artifacts/`, so you can inspect the learned embeddings without retraining.
 
-You can skip training and evaluate directly:
-
+To try a few examples directly:
 ```bash
-
-python -c "
-from src.evaluate import load_embeddings, most_similar, cosine_similarity
-
-emb, w2i, i2w = load_embeddings('artifacts/embeddings.npy', 'artifacts/vocab.json')
-print(most_similar('france', emb, w2i, i2w))
-print(cosine_similarity('king', 'queen', emb, w2i))
-"
+python demo.py
 ```
-Or just modify `tests/demo.py` with your examples and run it.
-
-```bash
-python tests/demo.py
-```
-
 ## Design notes
 
 - **Gradient scaling**: loss is reported as batch mean for readability, but 
@@ -61,7 +55,7 @@ python tests/demo.py
 
   | reduction | formula | equivalent LR |
   |-----------|---------|---------------|
-  | sum (ours) | `step = lr * B * mean_grad` | `lr = 0.025` |
+  | sum | `step = lr * B * mean_grad` | `lr = 0.025` |
   | mean | `step = lr * mean_grad` | `lr = 0.025 * B = 12.8` |
 
   Both are mathematically equivalent for constant-LR SGD. We prefer summed 
@@ -81,8 +75,7 @@ python tests/demo.py
 
 ## Possible improvements
 
-- Learning rate decay over epochs
-- Frequent-word subsampling (the original paper's trick for better rare-word embeddings)
-- Dynamic window size — sample window uniformly from [1, max_window]
-- Evaluate on word analogy benchmarks (Google analogy dataset)
-- Stream training pairs instead of materializing all 6M into memory
+- Frequent-word subsampling
+- Streaming training-pair generation instead of precomputing all pairs
+- Quantitative evaluation on analogy/similarity benchmarks
+- Learning-rate scheduling
