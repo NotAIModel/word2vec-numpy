@@ -9,7 +9,10 @@ from config import (
     ARTIFACTS_DIR, BATCH_SIZE, DATA_PATH, EMBED_DIM,
     EPOCHS, LR, MIN_COUNT, NEG_SAMPLES, SEED, WINDOW_SIZE,
 )
-from src.data import get_noise_distribution, get_training_pairs, sample_negatives_batch
+from src.data import (
+    get_noise_distribution, get_training_pairs, get_training_pairs_fast,
+    sample_negatives_batch,
+)
 from src.model import Word2Vec
 from src.vocab import build_vocab, tokenize
 
@@ -40,7 +43,6 @@ def train(model, pairs, noise_dist, epochs, batch_size, neg_samples):
         print(f"epoch {epoch + 1} done | avg loss: {total_loss / n_batches:.4f}")
 
     return loss_history
-
 
 def save_artifacts(model, word2idx, loss_history, artifacts_dir):
     os.makedirs(artifacts_dir, exist_ok=True)
@@ -79,7 +81,10 @@ def main():
     print(f"vocab size: {vocab_size:,}")
 
     indices = [word2idx[t] for t in tokens if t in word2idx]
+    
+    print("getting training pairs...")
     pairs = get_training_pairs(indices, window_size=WINDOW_SIZE)
+    print(f"total pairs: {len(pairs):,}")
 
     print("initializing model...")
     model = Word2Vec(vocab_size=vocab_size, embed_dim=EMBED_DIM, lr=LR)

@@ -8,6 +8,7 @@ Built as a JetBrains internship application task.
 - Skip-gram pair generation with sliding window
 - Negative sampling with unigram distribution smoothed by frequency^0.75
 - Batched forward pass with manual gradient derivation
+- Numerically stable sigmoid and log-sigmoid
 - SGD updates via `np.add.at` for correct repeated-index accumulation
 - Gradient correctness verified with finite-difference tests
 - Cosine similarity and most-similar word evaluation
@@ -20,12 +21,15 @@ Trained on WikiText-2 (~1.6M tokens, vocab ~19k words), 2 epochs. Loss mostly pl
 
 Some nearest neighbors after training:
 ```
-most_similar("france")              → italy (0.884), germany (0.864), russia (0.834)
-most_similar("king")                → henry (0.796), vi (0.793), queen (0.783)
-most_similar("war")                 → civil (0.768), outbreak (0.756), conflict (0.710)
-cosine_similarity("king", "queen")  → 0.783
+most_similar("france")              → italy (0.900), germany (0.883), russia (0.839)
+most_similar("king")                → henry (0.784), veera (0.781), lord (0.778)
+most_similar("war")                 → civil (0.729), ii (0.687), romania (0.6757)
+cosine_similarity("king", "queen")  → 0.719
 ```
 
+PCA projection of query words and their nearest neighbors each color is one query group:
+
+![embedding visualization](artifacts/embedding_viz.png)
 
 ## Usage
 ```bash
@@ -36,14 +40,13 @@ pytest
 ```
 
 Train from scratch:
-
 ```bash
 python train.py
 ```
 
 Pretrained artifacts are also included in `artifacts/`, so you can inspect the learned embeddings without retraining.
 
-To try a few examples directly:
+Run demo (prints nearest neighbors and saves PCA visualization to `artifacts/`):
 ```bash
 python demo.py
 ```
@@ -58,18 +61,16 @@ python demo.py
   | sum | `step = lr * B * mean_grad` | `lr = 0.025` |
   | mean | `step = lr * mean_grad` | `lr = 0.025 * B = 12.8` |
 
-  Both are mathematically equivalent for constant-LR SGD. We prefer summed 
+  Both are mathematically equivalent for constant-LR SGD. I prefer summed 
   gradients + `lr=0.025` since 0.025 is the value from the original paper and 
   avoids an unintuitive large LR in the config. Note: this coupling means 
   changing `BATCH_SIZE` requires adjusting `LR` proportionally.
 
 - **Two embedding matrices**: `weights_cntr` (center) and `weights_ctx` (context),
-  both shape `(V, D)`. Final embeddings use `weights_cntr` — standard practice 
-  since it's updated more directly by the training signal.
+  both shape `(V, D)`. Final embeddings use `weights_cntr` following the original 
+  paper, averaging both matrices is also a valid alternative.
 - **Embedding dim = 100**: original paper used 300 on a much larger corpus.
   100 is sufficient for WikiText-2.
-- **Batch size = 512**: single numpy call per batch for negative sampling,
-  vectorized matmul for scores. ~120 it/s on CPU.
 - **Tokenizer**: lowercase letters only (`[a-z]+`). Simple and sufficient for 
   WikiText-2, though it drops punctuation and numbers.
 
