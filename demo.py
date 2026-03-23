@@ -1,13 +1,10 @@
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent
-sys.path.append(str(ROOT))
+import os
+from config import ARTIFACTS_DIR
 
 from src.evaluate import load_embeddings, most_similar, cosine_similarity
 
-emb_path = ROOT / "artifacts" / "embeddings.npy"
-vocab_path = ROOT / "artifacts" / "vocab.json"
+emb_path = os.path.join(ARTIFACTS_DIR, "embeddings.npy")
+vocab_path = os.path.join(ARTIFACTS_DIR, "vocab.json")
 
 emb, w2i, i2w = load_embeddings(emb_path, vocab_path)
 
